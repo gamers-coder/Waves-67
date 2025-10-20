@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waves AI Interface</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com  "></script>
+    <!-- Configure Tailwind to use Inter font and extend colors --><script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Kept the dark theme colors for the base
+                        'primary-dark': '#0a0a0a',
+                        'card-dark': '#1a1a1a',
+                        'border-dark': '#333333',
+                        // Changed accent to a bright, monochromatic gray
+                        'accent-mono': '#cccccc', 
+                        // NEW: Additional monochromatic theme color
+                        'status-bg': '#2a2a2a',
+                        'success-green': '#10b981',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Load Inter font --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+
+    <!-- --- Custom Styles and Star Field Generation Script --- -->
+    <script>
+        // --- JavaScript for Dynamic Star Field Generation ---
+        function generateStarField(count) {
+            let shadow = '';
+            for (let i = 0; i < count; i++) {
+                const x = Math.floor(Math.random() * 100);
+                const y = Math.floor(Math.random() * 100); 
+                // Smaller size for subtlety
+                const size = (Math.random() * 0.5) + 0.3; 
+                // Lowered opacity range for a very subtle, pale look
+                const opacity = (Math.random() * 0.15) + 0.05; 
+
+                // Pure white stars
+                shadow += `${x}vw ${y}vh 0 ${size}px rgba(255, 255, 255, ${opacity})`;
+                if (i < count - 1) {
+                    shadow += ',\n';
+                }
+            }
+            return shadow;
+        }
+
+        const starShadows = generateStarField(200); 
+
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes floatUp {
+                0% { transform: translateY(100vh); } 
+                100% { transform: translateY(-100vh); }
+            }
+
+            .star-field::before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 1px;
+                height: 1px;
+                background: transparent;
+                box-shadow: ${starShadows};
+                animation: floatUp 40s linear infinite;
+                z-index: -1;
+            }
+            
+            .star-field::after {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 1px;
+                height: 1px;
+                background: transparent;
+                box-shadow: ${generateStarField(150)};
+                animation: floatUp 50s linear infinite;
+                animation-delay: -20s;
+                z-index: -1;
+            }
+
+            /* UPDATED: Bottom Light Gradient (Brighter, larger Monochromatic glow) */
+            .bottom-light-gradient {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 350px; /* Increased height */
+                /* Radial gradient with increased white opacity */
+                background: radial-gradient(circle at center bottom, rgba(255, 255, 255, 0.15) 0%, transparent 60%); /* Increased 0.08 -> 0.15 */
+                filter: blur(120px); /* Increased blur for more softness */
+                pointer-events: none;
+                z-index: -1; 
+            }
+
+            /* New: Futuristic Glow Effect for Interactive Elements (Monochromatic) */
+            .futuristic-glow {
+                transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;
+            }
+
+            /* Enhanced glow on hover/focus */
+            .futuristic-glow:hover, .futuristic-glow:focus {
+                /* Stronger inner and outer gray shadow */
+                box-shadow: 0 0 20px rgba(204, 204, 204, 0.6), inset 0 0 8px rgba(204, 204, 204, 0.3);
+                border-color: #ffffff !important; 
+                /* Subtle change to focus ring for quick actions */
+                outline: 2px solid theme('colors.gray.400');
+                outline-offset: 2px;
+            }
+
+            /* New: Text Shadow for the main title */
+            .title-shadow {
+                text-shadow: 0 0 15px rgba(255, 255, 255, 0.3), 0 0 5px rgba(255, 255, 255, 0.1);
+            }
+            
+            /* Custom Toggle Switch Styles */
+            .peer:checked + div {
+                background-color: #4b5563; /* Tailwind gray-600 */
+            }
+            .peer:checked + div:after {
+                background-color: #ffffff;
+                transform: translateX(1.5rem);
+            }
+
+            /* NEW: Floating Action Button (FAB) Styles */
+            .fab {
+                position: fixed;
+                bottom: 4rem; /* Above the taskbar */
+                right: 1.5rem;
+                z-index: 10;
+                animation: pulse 2s infinite;
+            }
+            @keyframes pulse {
+                0% { box-shadow: 0 0 0 0 rgba(204, 204, 204, 0.4); }
+                70% { box-shadow: 0 0 0 10px rgba(204, 204, 204, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(204, 204, 204, 0); }
+            }
+
+            /* NEW: Notification Panel Styles */
+            .notification-panel {
+                right: -100%; /* Hidden by default */
+                transition: right 0.3s ease;
+            }
+            .notification-panel.open {
+                right: 0;
+            }
+
+            /* NEW: Status Bar Item */
+            .status-item {
+                height: 0.25rem; /* Thin bar */
+                background-color: theme('colors.gray.700');
+                border-radius: 0.125rem;
+                overflow: hidden;
+            }
+            .status-item-fill {
+                height: 100%;
+                background-color: theme('colors.accent-mono');
+                transition: width 0.5s ease;
+            }
+
+            /* NEW: Game Card Styles */
+            .game-card {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .game-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(204, 204, 204, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            }
+
+            /* NEW: Onboarding & Login Section Styles */
+            .auth-section {
+                max-width: 400px; /* Limit width for forms */
+            }
+
+        `;
+        document.head.appendChild(style);
+    </script>
+</head>
+<body class="star-field min-h-screen text-white flex flex-col antialiased bg-black relative pb-20 md:pb-20"> <!-- Added padding-bottom to prevent content being covered -->
+
+    <!-- New: Bottom Light Gradient Element --><div class="bottom-light-gradient"></div>
+
+    <!-- NEW: Minimal Top Header for Logo (Fixed at top) -->
+    <header class="fixed top-0 left-0 right-0 p-4 md:p-6 bg-black/50 backdrop-blur-sm z-20 flex justify-between items-center">
+        <!-- Logo -->
+        <div class="text-lg font-bold tracking-widest text-gray-200">
+            WAVES.<span class="text-sm font-normal text-gray-500">ai</span>
+        </div>
+        <!-- NEW: Notification Bell and Status Bar Container -->
+        <div class="flex items-center space-x-4">
+            <!-- NEW: System Status Bar -->
+            <div class="hidden md:flex items-center space-x-3 text-xs text-gray-400">
+                <!-- CPU Status -->
+                <div class="flex items-center space-x-1">
+                    <span>CPU</span>
+                    <div class="status-item w-16">
+                        <div class="status-item-fill" style="width: 25%;"></div> <!-- Simulated 25% load -->
+                    </div>
+                </div>
+                <!-- Memory Status -->
+                <div class="flex items-center space-x-1">
+                    <span>Mem</span>
+                    <div class="status-item w-16">
+                        <div class="status-item-fill" style="width: 60%;"></div> <!-- Simulated 60% usage -->
+                    </div>
+                </div>
+                <!-- AI Load Status -->
+                <div class="flex items-center space-x-1">
+                    <span>AI</span>
+                    <div class="status-item w-16">
+                        <div class="status-item-fill" style="width: 40%;"></div> <!-- Simulated 40% load -->
+                    </div>
+                </div>
+            </div>
+            <!-- NEW: Notification Bell Button -->
+            <button id="notification-btn" class="p-2 rounded-full hover:bg-card-dark transition duration-200 text-gray-400 hover:text-white focus:outline-none relative">
+                <!-- Bell Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <!-- Notification Dot -->
+                <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- NEW: Notification Panel (Slides in from right) -->
+    <div id="notification-panel" class="notification-panel fixed top-0 right-0 h-full w-64 md:w-80 bg-card-dark border-l border-border-dark z-30 p-4 overflow-y-auto hidden">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-200">Notifications</h3>
+            <button id="close-notification-btn" class="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-red-600/70 transition duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <ul class="space-y-2">
+            <li class="p-2 bg-black/30 rounded border border-border-dark">
+                <p class="text-sm text-gray-300">New message from AI Assistant</p>
+                <p class="text-xs text-gray-500">2 minutes ago</p>
+            </li>
+            <li class="p-2 bg-black/30 rounded border border-border-dark">
+                <p class="text-sm text-gray-300">System update available</p>
+                <p class="text-xs text-gray-500">1 hour ago</p>
+            </li>
+            <li class="p-2 bg-black/30 rounded border border-border-dark">
+                <p class="text-sm text-gray-300">Task 'Generate Report' completed</p>
+                <p class="text-xs text-gray-500">3 hours ago</p>
+            </li>
+        </ul>
+    </div>
+
+    <!-- NEW: Floating Action Button (FAB) -->
+    <button id="fab-button" class="fab p-4 bg-accent-mono text-primary-dark rounded-full hover:bg-white transition duration-300 focus:outline-none focus:ring-4 focus:ring-gray-700/50 futuristic-glow">
+        <!-- Plus Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+    </button>
+
+    <!-- Main Content Area (Centered) --><main class="flex-grow flex flex-col justify-center items-center p-4 pt-20"> <!-- Added pt-20 to push content below the new top header -->
+
+        <!-- NEW: Onboarding Section (Initially Hidden) -->
+        <section id="onboarding-section" class="hidden auth-section w-full">
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-6 tracking-tight text-gray-50 title-shadow text-center">Welcome!</h1>
+            <p class="text-gray-400 mb-6 text-center">Create your account to get started.</p>
+            <form id="onboarding-form" class="space-y-4">
+                <div>
+                    <label for="onboard-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                    <input type="email" id="onboard-email" placeholder="you@example.com" class="w-full py-2 px-3 bg-card-dark border border-border-dark rounded-lg text-gray-300 placeholder-gray-600 transition duration-300 focus:border-accent-mono focus:ring-1 focus:ring-accent-mono hover:border-accent-mono" required>
+                </div>
+                <div>
+                    <label for="onboard-username" class="block text-sm font-medium text-gray-400 mb-1">Username</label>
+                    <input type="text" id="onboard-username" placeholder="Your chosen name" class="w-full py-2 px-3 bg-card-dark border border-border-dark rounded-lg text-gray-300 placeholder-gray-600 transition duration-300 focus:border-accent-mono focus:ring-1 focus:ring-accent-mono hover:border-accent-mono" required>
+                </div>
+                <div>
+                    <label for="onboard-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                    <input type="password" id="onboard-password" placeholder="Create a password" class="w-full py-2 px-3 bg-card-dark border border-border-dark rounded-lg text-gray-300 placeholder-gray-600 transition duration-300 focus:border-accent-mono focus:ring-1 focus:ring-accent-mono hover:border-accent-mono" required>
+                </div>
+                <div>
+                    <label for="onboard-password-confirm" class="block text-sm font-medium text-gray-400 mb-1">Confirm Password</label>
+                    <input type="password" id="onboard-password-confirm" placeholder="Confirm your password" class="w-full py-2 px-3 bg-card-dark border border-border-dark rounded-lg text-gray-300 placeholder-gray-600 transition duration-300 focus:border-accent-mono focus:ring-1 focus:ring-accent-mono hover:border-accent-mono" required>
+                </div>
+                <button type="submit" class="w-full mt-4 py-2 px-4 bg-accent-mono text-primary-dark font-medium rounded-lg hover:bg-white transition duration-300 focus:outline-none focus:ring-4 focus:ring-gray-700/50">Create Account</button>
+            </form>
+            <p class="text-gray-500 text-sm mt-4 text-center">Already have an account? <a href="#" id="switch-to-login" class="text-accent-mono hover:underline">Log in</a></p>
+        </section>
+
+        <!-- NEW: Login Section (Initially Hidden) -->
+        <section id="login-section" class="hidden auth-section w-full">
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-6 tracking-tight text-gray-50 title-shadow text-center">Welcome Back!</h1>
+            <p class="text-gray-400 mb-6 text-center">Log in to continue.</p>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-username" class="block text-sm font-medium text-gray-400 mb-1">Username</label>
+                    <input type="text" id="login-username" placeholder="Your username" class="w-full py-2 px-3 bg-card-dark border border-border-dark rounded-lg text-gray-300 placeholder-gray-600 transition duration-300 focus:border-accent-mono focus:ring-1 focus:ring-accent-mono hover:border-accent-mono" required>
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                    <input type="password" id="login-password" placeholder="Your password" class="w-full py-2 px-3 bg-card-dark border border-border-dark rounded-lg text-gray-300 placeholder-gray-600 transition duration-300 focus:border-accent-mono focus:ring-1 focus:ring-accent-mono hover:border-accent-mono" required>
+                </div>
+                <button type="submit" class="w-full mt-4 py-2 px-4 bg-accent-mono text-primary-dark font-medium rounded-lg hover:bg-white transition duration-300 focus:outline-none focus:ring-4 focus:ring-gray-700/50">Log In</button>
+            </form>
+            <p class="text-gray-500 text-sm mt-4 text-center">Don't have an account? <a href="#" id="switch-to-onboard" class="text-accent-mono hover:underline">Sign up</a></p>
+        </section>
+
+        <!-- NEW: Games Section (Initially Hidden) -->
+        <section id="games-section" class="hidden w-full max-w-6xl px-4">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-8 tracking-tight text-gray-50 title-shadow text-center">Games</h1>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                
+                <!-- Game Card: ReRun -->
+                <a href="#" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">ReRun</h3>
+                        <p class="text-sm text-gray-500 mb-2">A platformer with time manipulation.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Platformer</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Cuphead (Updated Link) -->
+                <a href="https://sites.google.com/view/waves67/cuphead" target="_blank" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Cuphead</h3>
+                        <p class="text-sm text-gray-500 mb-2">Run and gun action with a unique art style.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Run and Gun</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Hollow Knight -->
+                <a href="https://sites.google.com/view/waves67/hollow-knight" target="_blank" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Hollow Knight</h3>
+                        <p class="text-sm text-gray-500 mb-2">Explore the vast, interconnected world of Hallownest.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Metroidvania</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: R.E.P.O. -->
+                <a href="https://sites.google.com/view/waves67/r-e-p-o" target="_blank" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">R.E.P.O.</h3>
+                        <p class="text-sm text-gray-500 mb-2">A first-person shooter with repo agents.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">FPS</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Amanda the Adventurer -->
+                <a href="https://sites.google.com/view/waves67/amanda-the-adventurer" target="_blank" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Amanda the Adventurer</h3>
+                        <p class="text-sm text-gray-500 mb-2">A retro adventure game with a twist.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Adventure</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Retro Bowl -->
+                <a href="https://sites.google.com/view/waves67/retro-bowl" target="_blank" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Retro Bowl</h3>
+                        <p class="text-sm text-gray-500 mb-2">A retro-style American football game.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Sports</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Minecraft -->
+                <a href="https://sites.google.com/view/waves67/minecraft" target="_blank" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Minecraft</h3>
+                        <p class="text-sm text-gray-500 mb-2">Build, explore, and survive in blocky worlds.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Sandbox</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Hotline Miami -->
+                <a href="https://sites.google.com/view/waves67/hotline-miami" target="_blank" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Hotline Miami</h3>
+                        <p class="text-sm text-gray-500 mb-2">Top-down action with a neon aesthetic.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Action</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Undertale -->
+                <a href="#" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Undertale</h3>
+                        <p class="text-sm text-gray-500 mb-2">An RPG about pacifism and friendship.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">RPG</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Bad Parenting -->
+                <a href="#" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Bad Parenting</h3>
+                        <p class="text-sm text-gray-500 mb-2">A chaotic parenting simulator.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Simulation</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Backrooms -->
+                <a href="#" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Backrooms</h3>
+                        <p class="text-sm text-gray-500 mb-2">Escape the infinite, monotonous rooms.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Horror</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: n-gon -->
+                <a href="#" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">n-gon</h3>
+                        <p class="text-sm text-gray-500 mb-2">A fast-paced polygon shooter.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Shooter</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Paper.io -->
+                <a href="#" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Paper.io</h3>
+                        <p class="text-sm text-gray-500 mb-2">Capture land and avoid enemies.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">Strategy</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Game Card: Superhot -->
+                <a href="#" class="game-card bg-card-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+                    <!-- Content -->
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-200 mb-1">Superhot</h3>
+                        <p class="text-sm text-gray-500 mb-2">Time moves only when you move.</p>
+                        <div class="mt-auto flex justify-between items-center">
+                            <span class="text-xs text-gray-600">FPS</span>
+                            <button class="text-xs bg-gray-700/50 border border-gray-700 rounded px-3 py-1 hover:bg-gray-600 transition">Play</button>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- Default Home Section (Visible by default if logged in) -->
+        <section id="home-section" class="hidden w-full flex flex-col items-center"> <!-- Added flex-col and items-center to center children -->
+            <!-- Title is pure white with a soft white glow -->
+            <h1 class="text-5xl md:text-6xl font-extrabold mb-8 md:mb-12 tracking-tight text-gray-50 title-shadow text-center"> <!-- Added text-center -->
+                Hello!
+            </h1>
+
+            <!-- Search / Input Group --><div class="flex space-x-2 w-full max-w-lg mb-8"> <!-- Added mb-8 for spacing below the search bar -->
+                <!-- Search / Input Bar -->
+                <div class="relative flex-grow">
+                    <!-- Uses new accent-mono for hover/focus border -->
+                    <input type="text" placeholder="Have anything in mind?"
+                           class="w-full py-3 pl-12 pr-4 bg-card-dark border border-border-dark rounded-xl text-gray-300 placeholder-gray-600 transition duration-300 focus:border-accent-mono focus:ring-1 focus:ring-accent-mono hover:border-accent-mono futuristic-glow"
+                           aria-label="Search input">
+                    
+                    <!-- Search Icon --><svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+
+                    <!-- Shortcut Hint --><span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-600 font-mono px-2 py-1 bg-black/50 rounded border border-border-dark select-none pointer-events-none">
+                        Ctrl + K
+                    </span>
+                </div>
+
+                <!-- New: Microphone Button for Voice Search -->
+                <button class="p-3 bg-card-dark border border-border-dark rounded-xl hover:bg-border-dark transition duration-300 focus:outline-none focus:ring-4 focus:ring-gray-700/50 hover:border-accent-mono futuristic-glow">
+                    <!-- Mic Icon (lucide-react style) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-300">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Plus Button (kept for general quick action) -->
+            <button class="p-4 bg-card-dark border border-border-dark rounded-full hover:bg-border-dark transition duration-300 focus:outline-none focus:ring-4 focus:ring-gray-700/50 hover:border-accent-mono futuristic-glow mb-16"> <!-- Added mb-16 for spacing below the button -->
+                <!-- Plus Icon (lucide-react style) --><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-300">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+
+            <!-- New: Quick Action Tiles -->
+            <section class="w-full max-w-4xl px-4 md:px-0">
+                <h2 class="text-lg font-semibold text-gray-400 mb-4 tracking-wider text-center">Quick Actions</h2> <!-- Added text-center -->
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    
+                    <!-- Tile 1: Generate Code -->
+                    <a href="#" class="futuristic-glow block p-4 bg-card-dark border border-border-dark rounded-xl hover:bg-border-dark transition duration-300 group">
+                        <div class="flex items-center space-x-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400 group-hover:text-white transition duration-200">
+                                <polyline points="16 18 22 12 16 6"></polyline>
+                                <polyline points="8 6 2 12 8 18"></polyline>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-200">Code Generator</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Write functions and snippets instantly.</p>
+                    </a>
+
+                    <!-- Tile 2: Summarize Article -->
+                    <a href="#" class="futuristic-glow block p-4 bg-card-dark border border-border-dark rounded-xl hover:bg-border-dark transition duration-300 group">
+                        <div class="flex items-center space-x-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400 group-hover:text-white transition duration-200">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="9" x2="15" y2="9"></line>
+                                <line x1="9" y1="13" x2="15" y2="13"></line>
+                                <line x1="9" y1="17" x2="13" y2="17"></line>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-200">Summarize Text</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Condense articles or documents quickly.</p>
+                    </a>
+
+                    <!-- Tile 3: Create Image -->
+                    <a href="#" class="futuristic-glow block p-4 bg-card-dark border border-border-dark rounded-xl hover:bg-border-dark transition duration-300 group">
+                        <div class="flex items-center space-x-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400 group-hover:text-white transition duration-200">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M18 6l-2.29-2.29a2 2 0 0 0-1.41-.59H8.7a2 2 0 0 0-1.41.59L5.3 6"></path>
+                                <path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3.1l.8-1.59a2 2 0 0 1 1.8-1.41h4.6a2 2 0 0 1 1.8 1.41l.8 1.59H20a2 2 0 0 1 2 2v10z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-200">Image Creator</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Generate visuals from a description.</p>
+                    </a>
+                    
+                    <!-- Tile 4: Calendar/Planner -->
+                    <a href="#" class="futuristic-glow block p-4 bg-card-dark border border-border-dark rounded-xl hover:bg-border-dark transition duration-300 group">
+                        <div class="flex items-center space-x-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400 group-hover:text-white transition duration-200">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-200">Task Planner</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Manage your schedule and to-do list.</p>
+                    </a>
+                    
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- NEW: Bottom Taskbar (Transparent and Fixed) -->
+    <nav id="taskbar" class="hidden fixed bottom-0 left-0 right-0 w-full p-3 md:p-4 bg-black/70 backdrop-blur-lg border-t border-border-dark flex justify-center items-center space-x-6 md:space-x-10 z-20">
+        
+        <!-- Home Link -->
+        <a href="#" id="home-link" class="flex items-center space-x-1 text-sm font-medium text-gray-400 hover:text-white transition duration-200">
+            <span class="text-gray-600 font-mono text-xs">[H]</span> Home
+        </a>
+
+        <!-- Games Link -->
+        <a href="#" id="games-link" class="flex items-center space-x-1 text-sm font-medium text-gray-400 hover:text-white transition duration-200">
+            <span class="text-gray-600 font-mono text-xs">[G]</span> Games
+        </a>
+
+        <!-- AI Link -->
+        <a href="#" class="flex items-center space-x-1 text-sm font-medium text-gray-400 hover:text-white transition duration-200">
+            <span class="text-gray-600 font-mono text-xs">[A]</span> AI
+        </a>
+
+        <!-- Settings Button (Now with ID for JS) -->
+        <button id="settings-button" class="p-2 rounded-full hover:bg-card-dark transition duration-200 text-gray-400 hover:text-white focus:outline-none">
+            <!-- Settings Icon (Gear) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2H2a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </button>
+
+        <!-- NEW: Logout Button -->
+        <button id="logout-button" class="p-2 rounded-full hover:bg-card-dark transition duration-200 text-gray-400 hover:text-white focus:outline-none">
+            <!-- Logout Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+        </button>
+
+    </nav>
+    
+    <!-- Settings Modal (Desktop Window) -->
+    <!-- Removed centering classes from this parent container as the child handles its own fixed position -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex p-4">
+        
+        <!-- Modal Content Container - Now using fixed positioning and translate for initial centering -->
+        <div id="draggable-window" class="bg-card-dark border border-border-dark rounded-xl shadow-2xl w-full max-w-2xl h-[80vh] flex flex-col fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" 
+             style="box-shadow: 0 0 40px rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.1);">
+            
+            <!-- Window Header (Title Bar) - Added drag handle ID and cursor-move class -->
+            <div id="drag-handle" class="p-4 border-b border-border-dark flex justify-between items-center bg-black rounded-t-xl cursor-move select-none">
+                <h3 class="text-xl font-semibold text-gray-200 flex items-center space-x-2">
+                    <!-- Gear Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2H2a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>System Settings</span>
+                </h3>
+                <button id="close-settings-button" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-red-600/70 transition duration-200">
+                    <!-- Close Icon (X) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Window Body (Content) - Now a Flex Container for Sidebar and Content -->
+            <div class="flex-grow flex p-0 overflow-hidden">
+                
+                <!-- 1. Sidebar Navigation (1/4 width on desktop) -->
+                <nav id="settings-nav" class="w-1/4 min-w-[150px] p-4 bg-black border-r border-border-dark flex flex-col space-y-2 overflow-y-auto">
+                    <!-- Nav Buttons. The active one is set by JS on load. -->
+                    <button data-target="appearance" class="nav-button text-left p-2 rounded-lg text-gray-400 hover:bg-border-dark transition duration-150 focus:outline-none">Appearance</button>
+                    <button data-target="effects" class="nav-button text-left p-2 rounded-lg text-gray-400 hover:bg-border-dark transition duration-150 focus:outline-none">Background Effects</button>
+                    <button data-target="shortcuts" class="nav-button text-left p-2 rounded-lg text-gray-400 hover:bg-border-dark transition duration-150 focus:outline-none">Shortcuts</button>
+                    <!-- NEW CLOAKING BUTTON -->
+                    <button data-target="cloaking" class="nav-button text-left p-2 rounded-lg text-gray-400 hover:bg-border-dark transition duration-150 focus:outline-none">Cloaking</button>
+                </nav>
+
+                <!-- 2. Main Content Panel (3/4 width) -->
+                <div id="settings-content-wrapper" class="flex-grow p-6 overflow-y-auto">
+
+                    <!-- Appearance Section (Default visible) -->
+                    <div id="appearance-section" class="content-section space-y-8">
+                        <h4 class="text-xl font-medium text-gray-300 mb-6 tracking-wide">Appearance</h4>
+                        
+                        <!-- Theme Toggle -->
+                        <div class="border-b border-border-dark pb-6">
+                            <h5 class="text-md font-medium text-gray-400 mb-2">Color Theme</h5>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-gray-500">Current Theme: Monochromatic Dark</p>
+                                <button class="px-3 py-1 text-xs bg-gray-700/50 border border-gray-700 rounded-md hover:bg-gray-600 transition duration-200">Switch to Light</button>
+                            </div>
+                        </div>
+
+                        <!-- Interface Scaling -->
+                        <div class="pb-6">
+                            <h5 class="text-md font-medium text-gray-400 mb-2">Interface Scaling</h5>
+                            <input type="range" min="80" max="120" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg">
+                            <p class="text-xs text-gray-600 mt-1">Adjust the size of UI elements (100% default).</p>
+                        </div>
+                    </div>
+
+                    <!-- Animation Section (Hidden by default) -->
+                    <div id="effects-section" class="content-section hidden space-y-8">
+                        <h4 class="text-xl font-medium text-gray-300 mb-6 tracking-wide">Background Effects</h4>
+                        
+                        <!-- Star Field Toggle -->
+                        <div class="space-y-3 border-b border-border-dark pb-6">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <!-- Custom Checkbox Styling -->
+                                <input type="checkbox" checked class="h-5 w-5 appearance-none rounded-sm bg-card-dark border-2 border-gray-600 checked:bg-gray-400 checked:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                                <span class="text-sm text-gray-400">Enable Star Field Animation</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" checked class="h-5 w-5 appearance-none rounded-sm bg-card-dark border-2 border-gray-600 checked:bg-gray-400 checked:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                                <span class="text-sm text-gray-400">Enable Bottom Ambient Light</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Keyboard Shortcuts Section (Hidden by default) -->
+                    <div id="shortcuts-section" class="content-section hidden space-y-8">
+                        <h4 class="text-xl font-medium text-gray-300 mb-6 tracking-wide">Shortcuts</h4>
+                        <ul class="text-sm text-gray-500 space-y-3">
+                            <li class="flex justify-between p-2 bg-black/50 rounded">
+                                <span>Quick Search Focus</span>
+                                <span class="font-mono text-gray-400">Ctrl + K</span>
+                            </li>
+                            <li class="flex justify-between p-2 bg-black/50 rounded">
+                                <span>Open Code Generator</span>
+                                <span class="font-mono text-gray-400">Ctrl + G</span>
+                            </li>
+                            <li class="flex justify-between p-2 bg-black/50 rounded">
+                                <span>Open Image Creator</span>
+                                <span class="font-mono text-gray-400">Ctrl + I</span>
+                            </li>
+                            <li class="flex justify-between p-2 bg-black/50 rounded">
+                                <span>Quick Chat</span>
+                                <span class="font-mono text-gray-400">Ctrl + Space</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- CLOAKING SECTION -->
+                    <div id="cloaking-section" class="content-section hidden space-y-8">
+                        <h4 class="text-xl font-medium text-gray-300 mb-6 tracking-wide">Cloaking Field Configuration</h4>
+                        
+                        <!-- Main Toggle -->
+                        <div class="border-b border-border-dark pb-6">
+                            <h5 class="text-md font-medium text-gray-400 mb-2">Activate Cloaking Field</h5>
+                            <label for="cloaking-toggle" class="relative inline-flex items-center cursor-pointer">
+                                <!-- The toggle input is the 'peer' for Tailwind styling -->
+                                <input type="checkbox" id="cloaking-toggle" value="" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-700 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-800 peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                                <!-- Status label uses JS to update text and color -->
+                                <span id="cloaking-status" class="ms-3 text-sm font-medium text-gray-400">Status: Disabled</span>
+                            </label>
+                            <p class="text-xs text-red-500 mt-2">Warning: Excessive use may trigger local energy grid anomalies.</p>
+                        </div>
+
+                        <!-- Opacity Slider -->
+                        <div class="pb-6 border-b border-border-dark">
+                            <h5 class="text-md font-medium text-gray-400 mb-2">Visibility/Opacity Level</h5>
+                            <input type="range" min="0" max="100" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg">
+                            <p class="text-xs text-gray-600 mt-1">Adjusts the transparency of the interface to surrounding systems.</p>
+                        </div>
+
+                        <!-- Distortion Selector -->
+                        <div class="pb-6 border-b border-border-dark">
+                            <h5 class="text-md font-medium text-gray-400 mb-2">Interface Distortion Effect</h5>
+                            <select class="w-full p-2 bg-black border border-border-dark rounded-md text-gray-300 focus:border-accent-mono focus:ring-1 focus:ring-accent-mono">
+                                <option>None (Default)</option>
+                                <option>Subtle Scanline</option>
+                                <option>Minor Refraction</option>
+                                <option>Full Plasma Static</option>
+                            </select>
+                        </div>
+                        
+                        <!-- UPDATED: Debug Tools Section (This button now opens a live, rendered preview) -->
+                        <div class="pt-6">
+                            <h5 class="text-md font-medium text-gray-400 mb-2">Debug Interface Tools</h5>
+                            <p class="text-sm text-yellow-500 mb-4">Click below to open the **live, running** application in a separate window.</p>
+                            <!-- NOTE: ID changed to open-live-preview-button -->
+                            <button id="open-live-preview-button" class="px-4 py-2 text-sm bg-gray-700/50 border border-gray-700 rounded-lg hover:bg-gray-600 transition duration-200 text-white">
+                                Open Live Preview in New Window
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- Global Application Logic Script (Moved to end of body) --- -->
+    <script>
+        // --- Settings Modal Logic and Dragging Implementation ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const settingsButton = document.getElementById('settings-button');
+            const closeButton = document.getElementById('close-settings-button');
+            const modalBackdrop = document.getElementById('settings-modal');
+            const draggableWindow = document.getElementById('draggable-window');
+            const dragHandle = document.getElementById('drag-handle');
+            const navButtons = document.querySelectorAll('.nav-button');
+            const contentSections = document.querySelectorAll('.content-section');
+            const cloakingToggle = document.getElementById('cloaking-toggle');
+            const cloakingStatus = document.getElementById('cloaking-status');
+            // ID changed from open-code-button
+            const openLivePreviewButton = document.getElementById('open-live-preview-button'); 
+
+            // NEW: Notification Panel Elements
+            const notificationBtn = document.getElementById('notification-btn');
+            const closeNotificationBtn = document.getElementById('close-notification-btn');
+            const notificationPanel = document.getElementById('notification-panel');
+
+            // NEW: Floating Action Button Element
+            const fabButton = document.getElementById('fab-button');
+
+            // NEW: Game Page Elements
+            const gamesLink = document.getElementById('games-link');
+            const homeLink = document.getElementById('home-link');
+            const gamesSection = document.getElementById('games-section');
+            const homeSection = document.getElementById('home-section');
+            // NEW: Auth Elements
+            const onboardingSection = document.getElementById('onboarding-section');
+            const loginSection = document.getElementById('login-section');
+            const onboardingForm = document.getElementById('onboarding-form');
+            const loginForm = document.getElementById('login-form');
+            const switchToLogin = document.getElementById('switch-to-login');
+            const switchToOnboard = document.getElementById('switch-to-onboard');
+            // NEW: Taskbar and Logout Elements
+            const taskbar = document.getElementById('taskbar');
+            const logoutButton = document.getElementById('logout-button');
+
+
+            // NEW: Check login state on load
+            function checkLoginState() {
+                const onboarded = localStorage.getItem('onboarded') === 'true';
+                const loggedInUser = localStorage.getItem('loggedInUser');
+
+                if (!onboarded) {
+                    showSection(onboardingSection);
+                    taskbar.classList.add('hidden');
+                } else if (!loggedInUser) {
+                    showSection(loginSection);
+                    taskbar.classList.add('hidden');
+                } else {
+                    showSection(homeSection);
+                    taskbar.classList.remove('hidden');
+                }
+            }
+
+            // NEW: Show specific section and hide others
+            function showSection(sectionToShow) {
+                const sections = [onboardingSection, loginSection, homeSection, gamesSection];
+                sections.forEach(section => {
+                    if (section) section.classList.add('hidden');
+                });
+                if (sectionToShow) {
+                    sectionToShow.classList.remove('hidden');
+                }
+            }
+
+            // NEW: Onboarding Form Handler
+            onboardingForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('onboard-email').value;
+                const username = document.getElementById('onboard-username').value;
+                const password = document.getElementById('onboard-password').value;
+                const passwordConfirm = document.getElementById('onboard-password-confirm').value;
+
+                if (password !== passwordConfirm) {
+                    alert("Passwords do not match!");
+                    return;
+                }
+
+                // Basic password strength check (example)
+                if (password.length < 6) {
+                    alert("Password must be at least 6 characters long.");
+                    return;
+                }
+
+                // Store account details (hashed password is crucial in real apps)
+                // For this example, we store the raw password for simplicity (NOT SECURE)
+                const hashedPassword = btoa(password); // Base64 encoding (not actual hashing)
+                const accounts = JSON.parse(localStorage.getItem('accounts') || '{}');
+                if (accounts[username]) {
+                    alert("Username already exists!");
+                    return;
+                }
+                accounts[username] = { email, password: hashedPassword };
+                localStorage.setItem('accounts', JSON.stringify(accounts));
+                localStorage.setItem('onboarded', 'true');
+
+                alert("Account created successfully! You can now log in.");
+                showSection(loginSection);
+            });
+
+            // NEW: Login Form Handler
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+
+                const accounts = JSON.parse(localStorage.getItem('accounts') || '{}');
+                const user = accounts[username];
+
+                if (user && user.password === btoa(password)) { // Compare hashed password
+                    localStorage.setItem('loggedInUser', username);
+                    showSection(homeSection);
+                    taskbar.classList.remove('hidden');
+                } else {
+                    alert("Invalid username or password.");
+                }
+            });
+
+            // NEW: Logout Handler
+            logoutButton.addEventListener('click', () => {
+                localStorage.removeItem('loggedInUser');
+                showSection(loginSection);
+                taskbar.classList.add('hidden');
+            });
+
+            // NEW: Navigation Switches
+            switchToLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                showSection(loginSection);
+            });
+
+            switchToOnboard.addEventListener('click', (e) => {
+                e.preventDefault();
+                showSection(onboardingSection);
+            });
+
+            // NEW: Show Games Page
+            const showGamesPage = (e) => {
+                e.preventDefault(); // Prevent default anchor behavior
+                if (localStorage.getItem('loggedInUser')) {
+                    homeSection.classList.add('hidden');
+                    gamesSection.classList.remove('hidden');
+                } else {
+                    alert("Please log in first.");
+                    showSection(loginSection);
+                    taskbar.classList.add('hidden');
+                }
+            };
+
+            // NEW: Show Home Page
+            const showHomePage = (e) => {
+                e.preventDefault(); // Prevent default anchor behavior
+                gamesSection.classList.add('hidden');
+                homeSection.classList.remove('hidden');
+            };
+
+
+            const toggleSettingsModal = () => {
+                modalBackdrop.classList.toggle('hidden');
+            };
+            
+            // NEW: Toggle Notification Panel
+            const toggleNotificationPanel = () => {
+                notificationPanel.classList.toggle('hidden');
+                notificationPanel.classList.toggle('open');
+            };
+
+            // NEW: Close Notification Panel
+            const closeNotificationPanel = () => {
+                notificationPanel.classList.remove('open');
+                setTimeout(() => notificationPanel.classList.add('hidden'), 300); // Match transition duration
+            };
+
+            // NEW: FAB Click Handler
+            const handleFabClick = () => {
+                alert("Floating Action Button clicked! This could trigger a 'New Chat' or 'Quick Prompt' action.");
+            };
+
+            // Function to display a custom error message (replaces alert/confirm)
+            const showMessageBox = (title, message, colorClass) => {
+                 const messageBox = document.createElement('div');
+                messageBox.className = "fixed inset-0 bg-black/80 flex items-center justify-center z-[999]";
+                messageBox.innerHTML = `
+                    <div class="p-6 bg-card-dark rounded-xl border border-${colorClass} shadow-xl max-w-sm">
+                        <h6 class="text-xl text-${colorClass} mb-2">${title}</h6>
+                        <p class="text-gray-300">${message}</p>
+                        <button onclick="this.parentNode.parentNode.remove()" class="mt-4 px-4 py-2 bg-gray-700/70 text-white rounded-lg hover:bg-gray-600 transition">Dismiss</button>
+                    </div>
+                `;
+                document.body.appendChild(messageBox);
+            };
+
+
+            // 1. Modal Open/Close Handlers
+            if (settingsButton) {
+                settingsButton.addEventListener('click', toggleSettingsModal);
+            }
+            if (closeButton) {
+                closeButton.addEventListener('click', toggleSettingsModal);
+            }
+            // Close modal if user clicks on the backdrop (outside the window content)
+            if (modalBackdrop) {
+                 modalBackdrop.addEventListener('click', (e) => {
+                    // Check if the click target is the modal container itself
+                    if (e.target.id === 'settings-modal') {
+                        toggleSettingsModal();
+                    }
+                });
+            }
+
+            // NEW: Notification Panel Event Listeners
+            if (notificationBtn) {
+                notificationBtn.addEventListener('click', toggleNotificationPanel);
+            }
+            if (closeNotificationBtn) {
+                closeNotificationBtn.addEventListener('click', closeNotificationPanel);
+            }
+            // Close panel if clicking outside its content (on the backdrop)
+            document.addEventListener('click', (e) => {
+                if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target) && !notificationPanel.classList.contains('hidden')) {
+                    closeNotificationPanel();
+                }
+            });
+
+            // NEW: FAB Event Listener
+            if (fabButton) {
+                fabButton.addEventListener('click', handleFabClick);
+            }
+
+            // NEW: Game Page Navigation Event Listeners
+            if (gamesLink) {
+                gamesLink.addEventListener('click', showGamesPage);
+            }
+            if (homeLink) {
+                homeLink.addEventListener('click', showHomePage);
+            }
+
+
+            // 2. Dragging Logic
+            if (draggableWindow && dragHandle) {
+                let isDragging = false;
+                let offsetX, offsetY;
+
+                const startDrag = (e) => {
+                    // Stop default browser behavior (like touch scrolling or text selection)
+                    e.preventDefault(); 
+                    isDragging = true;
+                    
+                    // Use touch or mouse coordinates
+                    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+
+                    // Calculate the initial offset relative to the viewport
+                    const rect = draggableWindow.getBoundingClientRect();
+                    
+                    offsetX = clientX - rect.left;
+                    offsetY = clientY - rect.top;
+
+                    // Crucially, clear the centering transform and set explicit position 
+                    // before dragging starts, so we only use left/top for movement.
+                    draggableWindow.style.left = rect.left + 'px';
+                    draggableWindow.style.top = rect.top + 'px';
+                    draggableWindow.style.transform = 'none';
+
+                    // Attach drag listeners to the entire document
+                    document.addEventListener('mousemove', onDrag);
+                    document.addEventListener('mouseup', endDrag);
+                    document.addEventListener('touchmove', onDrag);
+                    document.addEventListener('touchend', endDrag);
+                };
+
+                const onDrag = (e) => {
+                    if (!isDragging) return;
+
+                    // Determine coordinates (handles both mouse and touch)
+                    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+
+                    let newLeft = clientX - offsetX;
+                    let newTop = clientY - offsetY;
+
+                    // Apply new position
+                    draggableWindow.style.left = newLeft + 'px';
+                    draggableWindow.style.top = newTop + 'px';
+                };
+
+                const endDrag = () => {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', onDrag);
+                    document.removeEventListener('mouseup', endDrag);
+                    document.removeEventListener('touchmove', onDrag);
+                    document.removeEventListener('touchend', endDrag);
+                };
+
+                // Attach start listeners to the handle
+                dragHandle.addEventListener('mousedown', startDrag);
+                dragHandle.addEventListener('touchstart', startDrag);
+            }
+
+            // 3. Tab Switching Logic for Sidebar
+            const switchTab = (targetId) => {
+                // Deactivate all buttons and hide all content
+                navButtons.forEach(btn => {
+                    btn.classList.remove('bg-card-dark', 'text-white');
+                    btn.classList.add('text-gray-400');
+                });
+                contentSections.forEach(section => {
+                    section.classList.add('hidden');
+                });
+
+                // Activate the clicked button
+                const activeButton = document.querySelector(`.nav-button[data-target="${targetId}"]`);
+                if (activeButton) {
+                    activeButton.classList.add('bg-card-dark', 'text-white');
+                    activeButton.classList.remove('text-gray-400');
+                }
+
+                // Show the corresponding content
+                const activeSection = document.getElementById(`${targetId}-section`);
+                if (activeSection) {
+                    activeSection.classList.remove('hidden');
+                }
+            };
+
+            // Attach listeners to navigation buttons
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const target = button.getAttribute('data-target');
+                    switchTab(target);
+                });
+            });
+
+            // 4. Cloaking Toggle Status Update (Interaction)
+            if (cloakingToggle) {
+                 cloakingToggle.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        cloakingStatus.textContent = 'Status: Active (Partial)';
+                        cloakingStatus.classList.remove('text-gray-400', 'text-red-500');
+                        cloakingStatus.classList.add('text-green-400');
+                    } else {
+                         cloakingStatus.textContent = 'Status: Disabled';
+                         cloakingStatus.classList.remove('text-green-400', 'text-red-500');
+                         cloakingStatus.classList.add('text-gray-400');
+                    }
+                });
+            }
+
+            // 5. Live Preview Export Logic (UPDATED)
+            const openLivePreviewInNewWindow = () => {
+                // Get the complete HTML of the current document, including the DOCTYPE
+                const htmlContent = document.documentElement.outerHTML;
+
+                // Open a new window
+                const newWindow = window.open('', '_blank');
+
+                if (newWindow) {
+                    // CRITICAL CHANGE: Write the full HTML content directly to the new document.
+                    // This tells the browser to parse and render it as a live website.
+                    newWindow.document.write('<!DOCTYPE html>\n' + htmlContent);
+                    newWindow.document.close();
+                    
+                    newWindow.focus();
+                } else {
+                    showMessageBox(
+                        'Error: Pop-up Blocked', 
+                        'Please allow pop-ups for this site to open the live preview.',
+                        'red-500'
+                    );
+                }
+            };
+
+            // Attach listener to the new button ID
+            if (openLivePreviewButton) {
+                openLivePreviewButton.addEventListener('click', openLivePreviewInNewWindow);
+            }
+
+            // Set the default tab on load
+            switchTab('appearance');
+
+            // NEW: Initialize the page state
+            checkLoginState();
+
+        });
+    </script>
+</body>
+</html>
